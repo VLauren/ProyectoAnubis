@@ -50,6 +50,10 @@ AProta::AProta()
 		Mesh->bGenerateOverlapEvents = false;
 		Mesh->SetCanEverAffectNavigation(false);
 	}
+
+	// Componente de movimiento
+	Movimiento = CreateDefaultSubobject<UMovimiento>(TEXT("Movimiento"));
+	Movimiento->UpdatedComponent = RootComponent;
 }
 
 void AProta::BeginPlay()
@@ -61,7 +65,6 @@ void AProta::BeginPlay()
 void AProta::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void AProta::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -70,5 +73,25 @@ void AProta::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+
+	PlayerInputComponent->BindAxis("MoveRight", this, &AProta::MoveRight);
+	PlayerInputComponent->BindAxis("MoveForward", this, &AProta::MoveForward);
+}
+
+UPawnMovementComponent * AProta::GetMovementComponent() const
+{
+	return Movimiento;
+}
+
+void AProta::MoveForward(float AxisValue)
+{
+	if (Movimiento && (Movimiento->UpdatedComponent == RootComponent))
+		Movimiento->AddInputVector(FRotator(0,GetControlRotation().Yaw,0).RotateVector(GetActorForwardVector()) * AxisValue);
+}
+
+void AProta::MoveRight(float AxisValue)
+{
+	if (Movimiento && (Movimiento->UpdatedComponent == RootComponent))
+		Movimiento->AddInputVector(GetActorRightVector() * AxisValue);
 }
 

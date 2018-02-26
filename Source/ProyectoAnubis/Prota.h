@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Movimiento.h"
 #include "Prota.generated.h"
 
 UCLASS()
@@ -38,10 +39,16 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// Funcion que devuelve el componente de movimiento
+	virtual UPawnMovementComponent* GetMovementComponent() const override;
+
 private:
 	/** The main skeletal mesh associated with this Character (optional sub-object). */
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class USkeletalMeshComponent* Mesh;
-	
-	
+
+	class UMovimiento* Movimiento;
+
+	void MoveForward(float AxisValue);
+	void MoveRight(float AxisValue);
 };
