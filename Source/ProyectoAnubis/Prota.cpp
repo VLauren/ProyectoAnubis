@@ -19,6 +19,10 @@ AProta::AProta()
 	CapsuleComponent->bDynamicObstacle = true;
 	RootComponent = CapsuleComponent;
 
+	CapsuleComponent->SetVisibility(true);
+	CapsuleComponent->SetHiddenInGame(false);
+
+
 	// Agrero el spring arm para la camara
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -71,11 +75,18 @@ void AProta::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	// input de camara
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 
+	// input de movimiento (controller)
 	PlayerInputComponent->BindAxis("MoveRight", this, &AProta::MoveRight);
 	PlayerInputComponent->BindAxis("MoveForward", this, &AProta::MoveForward);
+
+	// input de acciones
+	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AProta::Attack);
+	PlayerInputComponent->BindAction("Block", IE_Pressed, this, &AProta::StartBlock);
+	PlayerInputComponent->BindAction("Block", IE_Released, this, &AProta::StopBlock);
 }
 
 UPawnMovementComponent * AProta::GetMovementComponent() const
@@ -92,6 +103,23 @@ void AProta::MoveForward(float AxisValue)
 void AProta::MoveRight(float AxisValue)
 {
 	if (Movimiento && (Movimiento->UpdatedComponent == RootComponent))
-		Movimiento->AddInputVector(GetActorRightVector() * AxisValue);
+		Movimiento->AddInputVector(FRotator(0,GetControlRotation().Yaw,0).RotateVector(GetActorRightVector()) * AxisValue);
 }
+
+void AProta::Attack()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ATTACK"));
+}
+
+void AProta::StartBlock()
+{
+	UE_LOG(LogTemp, Warning, TEXT("START BLOCK"));
+}
+
+void AProta::StopBlock()
+{
+	UE_LOG(LogTemp, Warning, TEXT("STOP BLOCK"));
+}
+
+
 
