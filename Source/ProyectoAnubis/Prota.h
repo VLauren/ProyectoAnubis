@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Movimiento.h"
+#include "Runtime/Engine/Classes/Components/BoxComponent.h"
 #include "Prota.generated.h"
 
 UCLASS()
@@ -15,6 +16,9 @@ class PROYECTOANUBIS_API AProta : public APawn
 	/** The CapsuleComponent being used for movement collision (by CharacterMovement). Always treated as being vertically aligned in simple collision check functions. */
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UCapsuleComponent* CapsuleComponent;
+
+	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* hitBox;
 
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -43,6 +47,17 @@ public:
 	virtual UPawnMovementComponent* GetMovementComponent() const override;
 
 private:
+
+	// HACK
+	// TODO esto sera parte de un struct, cada ataque tendra sus datos y
+	// se podra enlazar con el siguiente
+	//------------------
+	int hitStart = 14;
+	int hitEnd = 34;
+	int linkStart = 40;
+	int lastFrame = 60;
+	//------------------
+
 	/** The main skeletal mesh associated with this Character (optional sub-object). */
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class USkeletalMeshComponent* Mesh;
@@ -54,4 +69,18 @@ private:
 	void Attack();
 	void StartBlock();
 	void StopBlock();
+
+	bool CheckAttackStart();
+	bool CheckIfLinkFrame();
+	bool CheckActiveFrame();
+
+	void StartAttack(int index);
+
+	void DoAttack();
+
+	bool attacking;
+
+	int currentAttackFrame;
+	int currentAttackIndex;
 };
+

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "Movimiento.h"
 
-const float VELOCIDAD = 300.0f;
+const float VELOCIDAD = 500.0f;
 
 void UMovimiento::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
