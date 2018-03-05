@@ -28,15 +28,14 @@ class PROYECTOANUBIS_API AProta : public APawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
 
-public:
-	// Sets default values for this pawn's properties
-	AProta();
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
+	// Sets default values for this pawn's properties
+	AProta();
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -46,14 +45,18 @@ public:
 	// Funcion que devuelve el componente de movimiento
 	virtual UPawnMovementComponent* GetMovementComponent() const override;
 
+	static FVector PlayerLocation();
+
 private:
+
+	static AProta* Instance;
 
 	// HACK
 	// TODO esto sera parte de un struct, cada ataque tendra sus datos y
 	// se podra enlazar con el siguiente
 	//------------------
-	int hitStart = 14;
-	int hitEnd = 34;
+	int hitStart = 24;
+	int hitEnd = 44;
 	int linkStart = 40;
 	int lastFrame = 60;
 	//------------------
@@ -77,6 +80,9 @@ private:
 	void StartAttack(int index);
 
 	void DoAttack();
+
+	UFUNCTION()
+		void OnOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
 	bool attacking;
 
