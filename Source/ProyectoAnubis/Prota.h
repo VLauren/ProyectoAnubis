@@ -18,7 +18,7 @@ class PROYECTOANUBIS_API AProta : public APawn
 		class UCapsuleComponent* CapsuleComponent;
 
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		class UBoxComponent* hitBox;
+		class UBoxComponent* hitBox = nullptr;
 
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -27,6 +27,9 @@ class PROYECTOANUBIS_API AProta : public APawn
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class UMovimiento* Movimiento;
 
 protected:
 	// Called when the game starts or when spawned
@@ -47,6 +50,10 @@ public:
 
 	static FVector PlayerLocation();
 
+	/** The main skeletal mesh associated with this Character (optional sub-object). */
+	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class USkeletalMeshComponent* Mesh;
+
 private:
 
 	static AProta* Instance;
@@ -61,11 +68,6 @@ private:
 	int lastFrame = 60;
 	//------------------
 
-	/** The main skeletal mesh associated with this Character (optional sub-object). */
-	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		class USkeletalMeshComponent* Mesh;
-
-	class UMovimiento* Movimiento;
 
 	void MoveForward(float AxisValue);
 	void MoveRight(float AxisValue);
@@ -80,6 +82,8 @@ private:
 	void StartAttack(int index);
 
 	void DoAttack();
+
+	void MeshRotation(float DeltaTime);
 
 	UFUNCTION()
 		void OnOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);

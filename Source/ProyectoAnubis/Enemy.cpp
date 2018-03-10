@@ -1,13 +1,9 @@
 #include "Enemy.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
+#include "Runtime/Engine/Classes/Components/SkeletalMeshComponent.h"
 #include "Prota.h"
 
 /* TODO
-* - tomar referencia al prota y funcion que devuelva la posicion
-* - funcion de recibir daño
-*	- Test con log y con espera
-* - Morir
-* - colision de arma -> recibir daño (en casita)
 * - AIController, como va eso
 */
 
@@ -30,13 +26,31 @@ AEnemy::AEnemy()
 	CapsuleComponent->SetHiddenInGame(false);
 
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnOverlap);
+
+	Mesh = CreateOptionalDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	if (Mesh)
+	{
+		Mesh->AlwaysLoadOnClient = true;
+		Mesh->AlwaysLoadOnServer = true;
+		Mesh->bOwnerNoSee = false;
+		Mesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose;
+		Mesh->bCastDynamicShadow = true;
+		Mesh->bAffectDynamicIndirectLighting = true;
+		Mesh->PrimaryComponentTick.TickGroup = TG_PrePhysics;
+		Mesh->SetupAttachment(CapsuleComponent);
+		static FName MeshCollisionProfileName(TEXT("CharacterMesh"));
+		Mesh->SetCollisionProfileName(MeshCollisionProfileName);
+		Mesh->bGenerateOverlapEvents = false;
+		Mesh->SetCanEverAffectNavigation(false);
+	}
 }
 
 // Called when the game starts or when spawned
 void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	StartMeshRotation = Mesh->RelativeRotation;
+	// CurrentRotation = Mesh->RelativeRotation;
 }
 
 // Called every frame
@@ -44,7 +58,14 @@ void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	AddActorLocalOffset(DeltaTime * ((AProta::PlayerLocation() - GetActorLocation()).GetSafeNormal()) * 80);
+	// Movimiento
+	FVector direccion = (AProta::PlayerLocation() - GetActorLocation()).GetSafeNormal();
+	AddActorLocalOffset(DeltaTime * direccion * 80);
+
+	// Rotacion del modelo
+	FRotator TargetRotation = direccion.Rotation() + StartMeshRotation;
+	CurrentRotation = FMath::Lerp(CurrentRotation, TargetRotation, 0.1f);
+	Mesh->SetRelativeRotation(CurrentRotation);
 }
 
 // Called to bind functionality to input

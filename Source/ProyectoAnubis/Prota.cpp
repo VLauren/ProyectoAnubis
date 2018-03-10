@@ -62,19 +62,6 @@ AProta::AProta()
 	Movimiento = CreateDefaultSubobject<UMovimiento>(TEXT("Movimiento"));
 	Movimiento->UpdatedComponent = RootComponent;
 
-	// HACK Hitbox provisional
-	hitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Hitbox"));
-	if (hitBox)
-	{
-		hitBox->InitBoxExtent(FVector(30, 30, 30));
-		hitBox->SetVisibility(true);
-		hitBox->SetHiddenInGame(false);
-		// hitBox->SetRelativeLocation(FVector(3, 3, 3));
-	}
-
-	// evento de overlap del hitbox
-	hitBox->OnComponentBeginOverlap.AddDynamic(this, &AProta::OnOverlap);
-
 	Instance = this;
 }
 
@@ -82,9 +69,26 @@ void AProta::BeginPlay()
 {
 	Super::BeginPlay();
 
-	hitBox->bGenerateOverlapEvents = false;
-	hitBox->SetVisibility(false);
-	hitBox->SetHiddenInGame(true);
+	// hitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Hitbox"));
+	TArray<UObject*> arr;
+	Mesh->GetDefaultSubobjects(arr);
+	for (UObject* obj : arr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Subobjeto: %s"), *obj->GetName())
+	}
+	
+	hitBox = (UBoxComponent*)GetComponentByClass(UBoxComponent::StaticClass());
+
+	// hitBox = (UBoxComponent*)(Mesh->GetDefaultSubobjectByName(TEXT("Hit")));
+	if (hitBox != nullptr)
+	{
+		hitBox->bGenerateOverlapEvents = false;
+		hitBox->SetVisibility(false);
+		hitBox->SetHiddenInGame(true);
+
+		// evento de overlap del hitbox
+		hitBox->OnComponentBeginOverlap.AddDynamic(this, &AProta::OnOverlap);
+	}
 }
 
 void AProta::Tick(float DeltaTime)
@@ -92,6 +96,8 @@ void AProta::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	DoAttack();
+
+	MeshRotation(DeltaTime);
 }
 
 void AProta::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -199,17 +205,20 @@ void AProta::DoAttack()
 
 		currentAttackFrame++;
 
-		if (CheckActiveFrame())
+		if (hitBox != nullptr)
 		{
-			hitBox->bGenerateOverlapEvents = true;
-			hitBox->SetVisibility(true);
-			hitBox->SetHiddenInGame(false);
-		}
-		else
-		{
-			hitBox->bGenerateOverlapEvents = false;
-			hitBox->SetVisibility(false);
-			hitBox->SetHiddenInGame(true);
+			if (CheckActiveFrame())
+			{
+				hitBox->bGenerateOverlapEvents = true;
+				hitBox->SetVisibility(true);
+				hitBox->SetHiddenInGame(false);
+			}
+			else
+			{
+				hitBox->bGenerateOverlapEvents = false;
+				hitBox->SetVisibility(false);
+				hitBox->SetHiddenInGame(true);
+			}
 		}
 
 		if (currentAttackFrame >= lastFrame)
@@ -228,7 +237,8 @@ void AProta::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherAc
 	if (OtherComp != nullptr)
 	{
 		// Si es enemigo, le hago daño
-		((AEnemy*)OtherComp->GetOwner())->Damage(10);
+		if(OtherComp->GetOwner()->GetClass()->IsChildOf<AEnemy>())
+			((AEnemy*)OtherComp->GetOwner())->Damage(10);
 	}
 }
 
@@ -237,7 +247,12 @@ FVector AProta::PlayerLocation()
 	return Instance->GetActorLocation();
 }
 
+void AProta::MeshRotation(float DeltaTime)
+{
+	// Mesh->SetRelativeRotation(RootComponent->GetComponentRotation());
 
+	// Mesh->AddLocalRotation(FRotator(0, DeltaTime * 90, 0));
+}
 
 
 

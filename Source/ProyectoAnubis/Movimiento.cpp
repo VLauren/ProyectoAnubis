@@ -1,7 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "Movimiento.h"
+#include "Prota.h"
 
 const float VELOCIDAD = 500.0f;
+
+void UMovimiento::BeginPlay()
+{
+	Super::BeginPlay();
+
+	Mesh = ((AProta*)GetOwner())->Mesh;
+
+	StartMeshRotation = Mesh->RelativeRotation;
+}
 
 void UMovimiento::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
@@ -24,6 +34,11 @@ void UMovimiento::TickComponent(float DeltaTime, enum ELevelTick TickType, FActo
 		// Si chocamos con algo, me deslizo sobre el
 		if (Hit.IsValidBlockingHit())
 			SlideAlongSurface(movimientoEsteFrame, 1.f - Hit.Time, Hit.Normal, Hit);
+
+		// Rotacion de la malla
+		FRotator TargetRotation = movimientoEsteFrame.Rotation() + StartMeshRotation;
+		CurrentRotation = FMath::Lerp(CurrentRotation, TargetRotation, 0.1f);
+		Mesh->SetRelativeRotation(CurrentRotation);
 	}
 }
 

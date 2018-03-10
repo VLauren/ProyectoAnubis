@@ -14,13 +14,17 @@ class PROYECTOANUBIS_API AEnemy : public APawn
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UCapsuleComponent* CapsuleComponent;
 
+	/** The main skeletal mesh associated with this Character (optional sub-object). */
+	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class USkeletalMeshComponent* Mesh;
+
 public:
 	// Sets default values for this pawn's properties
 	AEnemy();
 
-protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+protected:
 
 public:	
 	// Called every frame
@@ -34,4 +38,6 @@ public:
 
 	void Damage(int amount);
 	
+	FRotator StartMeshRotation;
+	FRotator CurrentRotation;
 };
