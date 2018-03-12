@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Movimiento.h"
+#include "NormalAttackData.h"
 #include "Runtime/Engine/Classes/Components/BoxComponent.h"
 #include "Prota.generated.h"
 
@@ -52,7 +53,10 @@ public:
 
 	/** The main skeletal mesh associated with this Character (optional sub-object). */
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		class USkeletalMeshComponent* Mesh;
+		class USkeletalMeshComponent* Mesh = nullptr;
+
+	UPROPERTY(EditDefaultsOnly)
+		UNormalAttackData* AttackData = nullptr;
 
 private:
 
@@ -62,10 +66,10 @@ private:
 	// TODO esto sera parte de un struct, cada ataque tendra sus datos y
 	// se podra enlazar con el siguiente
 	//------------------
-	int hitStart = 24;
-	int hitEnd = 44;
-	int linkStart = 40;
-	int lastFrame = 60;
+	// int hitStart = 24;
+	// int hitEnd = 44;
+	// int linkStart = 40;
+	// int lastFrame = 60;
 	//------------------
 
 

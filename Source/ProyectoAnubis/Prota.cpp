@@ -1,6 +1,7 @@
 #include "Prota.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "Runtime/Engine/Classes/Components/SkeletalMeshComponent.h"
+#include "Runtime/CoreUObject/Public/UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/Engine.h"
@@ -61,6 +62,10 @@ AProta::AProta()
 	// Componente de movimiento
 	Movimiento = CreateDefaultSubobject<UMovimiento>(TEXT("Movimiento"));
 	Movimiento->UpdatedComponent = RootComponent;
+
+	// Datos de ataque
+	static ConstructorHelpers::FObjectFinder<UNormalAttackData> AttackDataObj(TEXT("/Game/Datos/PlayerAttacks"));
+	AttackData = AttackDataObj.Object;
 
 	Instance = this;
 }
@@ -149,9 +154,12 @@ void AProta::Attack()
 
 	if (CheckAttackStart())
 	{
-		StartAttack(1);
-		// hitBox->SetVisibility(true);
-		// hitBox->SetHiddenInGame(false);
+		StartAttack(0);
+	}
+	else if (CheckIfLinkFrame())
+	{
+		StartAttack(currentAttackIndex + 1);
+		UE_LOG(LogTemp, Warning, TEXT("LINK! %d"), (currentAttackIndex + 1));
 	}
 }
 
@@ -175,17 +183,30 @@ bool AProta::CheckAttackStart()
 // Comprueba si el personaje puede inicar un ataque desde del actual
 bool AProta::CheckIfLinkFrame()
 {
-	return attacking && currentAttackFrame >= linkStart;
+	if (AttackData == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("NO HAY DATOS DE ATAQUE"));
+		return false;
+	}
+	bool hasNextAttack = currentAttackIndex < (AttackData->Attacks.Num() - 1);
+
+	return attacking && currentAttackFrame >= AttackData->Attacks[currentAttackIndex].linkStart && hasNextAttack;
 }
 
 // Comprueba si estoy en un frame activo de daño
 bool AProta::CheckActiveFrame()
 {
-	return currentAttackFrame >= hitStart && currentAttackFrame <= hitEnd;
+	return currentAttackFrame >= AttackData->Attacks[currentAttackIndex].hitStart && currentAttackFrame <= AttackData->Attacks[currentAttackIndex].hitEnd;
 }
 
 void AProta::StartAttack(int index)
 {
+	if (AttackData == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("NO HAY DATOS DE ATAQUE"));
+		return;
+	}
+
 	// StartAttackAnimation(index);
 	attacking = true;
 	currentAttackFrame = 0;
@@ -199,7 +220,7 @@ void AProta::DoAttack()
 		// UE_LOG(LogTemp, Warning, TEXT("frame de ataque: %d - %s"), currentAttackFrame, (CheckActiveFrame() ? TEXT("true") : TEXT("false")));
 		if (GEngine)
 		{
-			FString msg = FString::Printf(TEXT("frame de ataque: %d - %s"), currentAttackFrame, (CheckActiveFrame() ? TEXT("true") : TEXT("false")));
+			FString msg = FString::Printf(TEXT("ATAQUE: %d - frame: %d - activo: %s"), currentAttackIndex, currentAttackFrame, (CheckActiveFrame() ? TEXT("true") : TEXT("false")));
 			GEngine->AddOnScreenDebugMessage(1, 0.0f, FColor::Green, msg);
 		}
 
@@ -221,7 +242,7 @@ void AProta::DoAttack()
 			}
 		}
 
-		if (currentAttackFrame >= lastFrame)
+		if (currentAttackFrame >= AttackData->Attacks[currentAttackIndex].lastFrame)
 		{
 			// TODO parar la animacion de ataque
 
