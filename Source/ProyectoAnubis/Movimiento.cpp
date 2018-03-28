@@ -20,6 +20,8 @@ void UMovimiento::TickComponent(float DeltaTime, enum ELevelTick TickType, FActo
 	if (!PawnOwner || !UpdatedComponent || ShouldSkipUpdate(DeltaTime))
 		return;
 
+	AProta* prota = (AProta*)GetPawnOwner();
+
 	// Calculo el vector de movimiento
 	FVector movimientoEsteFrame = ConsumeInputVector().GetClampedToMaxSize(1.0f) * DeltaTime * VELOCIDAD;
 
@@ -39,6 +41,18 @@ void UMovimiento::TickComponent(float DeltaTime, enum ELevelTick TickType, FActo
 		FRotator TargetRotation = movimientoEsteFrame.Rotation() + StartMeshRotation;
 		CurrentRotation = FMath::Lerp(CurrentRotation, TargetRotation, 0.1f);
 		Mesh->SetRelativeRotation(CurrentRotation);
+
+		// Si el estado de animacion es diferente de corriendo, inicio la animacion de correr
+		if (prota->AnimState != EProtaAnimState::AS_RUN)
+		{
+			Mesh->PlayAnimation(prota->AnimRun, true);
+			prota->AnimState = EProtaAnimState::AS_RUN;
+		}
+	}
+	else if (prota->AnimState == EProtaAnimState::AS_RUN)
+	{
+		Mesh->PlayAnimation(prota->AnimStand, true);
+		prota->AnimState = EProtaAnimState::AS_STAND;
 	}
 }
 

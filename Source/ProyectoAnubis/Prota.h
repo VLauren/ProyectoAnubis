@@ -9,6 +9,14 @@
 #include "Runtime/Engine/Classes/Components/BoxComponent.h"
 #include "Prota.generated.h"
 
+UENUM()
+enum class EProtaAnimState : uint8
+{
+	AS_STAND	UMETA(DisplayName="Stand"),
+	AS_RUN		UMETA(DisplayName="Run"),
+	AS_ATTACK	UMETA(DisplayName="Attack"),
+};
+
 UCLASS()
 class PROYECTOANUBIS_API AProta : public APawn
 {
@@ -58,6 +66,26 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 		UNormalAttackData* AttackData = nullptr;
 
+	void Damage(int amount);
+
+	// UPROPERTY(EditAnywhere)
+		// class UBlendSpace1D *BlendSpace;
+
+	// Animaciones
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+		class UAnimationAsset* AnimStand;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+		class UAnimationAsset* AnimRun;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+		class UAnimationAsset* AnimAttack1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+		class UAnimationAsset* AnimAttack2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+		class UAnimationAsset* AnimAttack3;
+
+	UPROPERTY(EditAnywhere, Category = Animation)
+		EProtaAnimState AnimState;
+
 private:
 
 	static AProta* Instance;
@@ -96,5 +124,10 @@ private:
 
 	int currentAttackFrame;
 	int currentAttackIndex;
+
+	int HitPoints;
+
+	bool linkAttack;
+	bool hitStun;
 };
 

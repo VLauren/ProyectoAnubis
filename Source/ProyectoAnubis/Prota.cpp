@@ -1,4 +1,5 @@
 #include "Prota.h"
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "Runtime/Engine/Classes/Components/SkeletalMeshComponent.h"
 #include "Runtime/CoreUObject/Public/UObject/ConstructorHelpers.h"
@@ -68,6 +69,8 @@ AProta::AProta()
 	AttackData = AttackDataObj.Object;
 
 	Instance = this;
+
+	HitPoints = 100;
 }
 
 void AProta::BeginPlay()
@@ -94,6 +97,9 @@ void AProta::BeginPlay()
 		// evento de overlap del hitbox
 		hitBox->OnComponentBeginOverlap.AddDynamic(this, &AProta::OnOverlap);
 	}
+
+	// Mesh->PlayAnimation()
+	Mesh->PlayAnimation(AnimStand, true);
 }
 
 void AProta::Tick(float DeltaTime)
@@ -134,6 +140,8 @@ void AProta::MoveForward(float AxisValue)
 	if (attacking)
 		return;
 
+	// Mesh->PlayAnimation(AnimRun, true);
+
 	if (Movimiento && (Movimiento->UpdatedComponent == RootComponent))
 		Movimiento->AddInputVector(FRotator(0,GetControlRotation().Yaw,0).RotateVector(GetActorForwardVector()) * AxisValue);
 }
@@ -143,6 +151,8 @@ void AProta::MoveRight(float AxisValue)
 	// si estoy atacando, no me muevo
 	if (attacking)
 		return;
+
+	// Mesh->PlayAnimation(AnimRun, true);
 
 	if (Movimiento && (Movimiento->UpdatedComponent == RootComponent))
 		Movimiento->AddInputVector(FRotator(0,GetControlRotation().Yaw,0).RotateVector(GetActorRightVector()) * AxisValue);
@@ -158,7 +168,9 @@ void AProta::Attack()
 	}
 	else if (CheckIfLinkFrame())
 	{
-		StartAttack(currentAttackIndex + 1);
+		// StartAttack(currentAttackIndex + 1);
+		linkAttack = true;
+
 		UE_LOG(LogTemp, Warning, TEXT("LINK! %d"), (currentAttackIndex + 1));
 	}
 }
@@ -201,6 +213,8 @@ bool AProta::CheckActiveFrame()
 
 void AProta::StartAttack(int index)
 {
+	linkAttack = false;
+
 	if (AttackData == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("NO HAY DATOS DE ATAQUE"));
@@ -211,6 +225,19 @@ void AProta::StartAttack(int index)
 	attacking = true;
 	currentAttackFrame = 0;
 	currentAttackIndex = index;
+
+	// Inicio animacion
+	if (currentAttackIndex == 0)
+		Mesh->PlayAnimation(AnimAttack1, false);
+	if (currentAttackIndex == 1)
+		Mesh->PlayAnimation(AnimAttack2, false);
+	if (currentAttackIndex == 2)
+		Mesh->PlayAnimation(AnimAttack3, false);
+	AnimState = EProtaAnimState::AS_ATTACK;
+
+	// Mesh->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage();
+	// https://docs.unrealengine.com/en-us/Engine/Animation/AnimationComposite
+
 }
 
 void AProta::DoAttack()
@@ -244,9 +271,19 @@ void AProta::DoAttack()
 
 		if (currentAttackFrame >= AttackData->Attacks[currentAttackIndex].lastFrame)
 		{
-			// TODO parar la animacion de ataque
+			if (linkAttack)
+			{
+				// lanzo el siguiente ataque
+				StartAttack(currentAttackIndex + 1);
+			}
+			else
+			{
+				// Paro la animacion de ataque
+				AnimState = EProtaAnimState::AS_STAND;
+				Mesh->PlayAnimation(AnimStand, false);
 
-			attacking = false;
+				attacking = false;
+			}
 		}
 	}
 }
@@ -275,6 +312,22 @@ void AProta::MeshRotation(float DeltaTime)
 	// Mesh->AddLocalRotation(FRotator(0, DeltaTime * 90, 0));
 }
 
+void AProta::Damage(int amount)
+{
+	// UE_LOG(LogTemp, Warning, TEXT("ENEMY DAMAGE: %d"), amount)
+
+	// HACK
+	// Destroy();
+
+	HitPoints -= amount;
+	if (HitPoints <= 0)
+	{
+		// UGameplayStatics::OpenLevel(this, *GetWorld()->GetMapName());
+		UGameplayStatics::OpenLevel(this, TEXT("/Game/Mapas/Mapa2"));
+	}
+
+	hitStun = true;
+}
 
 
 

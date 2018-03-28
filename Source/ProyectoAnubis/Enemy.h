@@ -6,6 +6,14 @@
 #include "GameFramework/Pawn.h"
 #include "Enemy.generated.h"
 
+UENUM()
+enum class EEnemyState : uint8
+{
+	ES_WAIT			UMETA(DisplayName="Wait"),
+	ES_CHASING		UMETA(DisplayName="Chasing"),
+	ES_ATTACKING	UMETA(DisplayName="Attacking"),
+};
+
 UCLASS()
 class PROYECTOANUBIS_API AEnemy : public APawn
 {
@@ -18,17 +26,25 @@ class PROYECTOANUBIS_API AEnemy : public APawn
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class USkeletalMeshComponent* Mesh;
 
+	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* HitBox = nullptr;
+
+private:
+
+protected:
+
 public:
 	// Sets default values for this pawn's properties
 	AEnemy();
 
 	virtual void BeginPlay() override;
 
-protected:
-
-public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	void Attack();
+
+	void EndAttack();
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -40,4 +56,12 @@ public:
 	
 	FRotator StartMeshRotation;
 	FRotator CurrentRotation;
+
+	UFUNCTION()
+		void OnHitboxOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+
+	UPROPERTY(EditAnywhere, Category=Enum)
+		EEnemyState EnemyState;
+
+	FTimerHandle TimerHandle;
 };
