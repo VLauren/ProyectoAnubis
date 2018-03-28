@@ -72,6 +72,8 @@ void AEnemy::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	FVector direccion;
+
+	// Si estoy persiguiendo
 	if (EnemyState == EEnemyState::ES_CHASING)
 	{
 		// Movimiento
@@ -82,9 +84,10 @@ void AEnemy::Tick(float DeltaTime)
 			Attack();
 	}
 
+	// Siempre que no este atacando
 	if (EnemyState != EEnemyState::ES_ATTACKING)
 	{
-		// Rotacion del modelo
+		// oriento el modelo hacia el jugador
 		FRotator TargetRotation = direccion.Rotation() + StartMeshRotation;
 		CurrentRotation = FMath::Lerp(CurrentRotation, TargetRotation, 0.1f);
 		Mesh->SetRelativeRotation(CurrentRotation);
@@ -119,13 +122,6 @@ void AEnemy::EndAttack()
 		HitBox->SetVisibility(false);
 		HitBox->SetHiddenInGame(true);
 	}
-
-}
-
-// Called to bind functionality to input
-void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
 
