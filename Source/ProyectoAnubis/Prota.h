@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -14,7 +12,9 @@ enum class EProtaAnimState : uint8
 {
 	AS_STAND	UMETA(DisplayName="Stand"),
 	AS_RUN		UMETA(DisplayName="Run"),
-	AS_ATTACK	UMETA(DisplayName="Attack"),
+	AS_ATTACK	UMETA(DisplayName = "Attack"),
+	AS_DEATH	UMETA(DisplayName = "Death"),
+	AS_HIT		UMETA(DisplayName = "Hit")
 };
 
 UCLASS()
@@ -68,9 +68,6 @@ public:
 
 	void Damage(int amount);
 
-	// UPROPERTY(EditAnywhere)
-		// class UBlendSpace1D *BlendSpace;
-
 	// Animaciones
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 		class UAnimationAsset* AnimStand;
@@ -88,18 +85,17 @@ public:
 
 private:
 
+	int HitPoints;
+
+	// flags
+	bool attacking;
+	bool linkAttack;
+	bool hitStun;
+
+	int currentAttackFrame;
+	int currentAttackIndex;
+
 	static AProta* Instance;
-
-	// HACK
-	// TODO esto sera parte de un struct, cada ataque tendra sus datos y
-	// se podra enlazar con el siguiente
-	//------------------
-	// int hitStart = 24;
-	// int hitEnd = 44;
-	// int linkStart = 40;
-	// int lastFrame = 60;
-	//------------------
-
 
 	void MoveForward(float AxisValue);
 	void MoveRight(float AxisValue);
@@ -112,22 +108,10 @@ private:
 	bool CheckActiveFrame();
 
 	void StartAttack(int index);
-
 	void DoAttack();
-
-	void MeshRotation(float DeltaTime);
 
 	UFUNCTION()
 		void OnOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
-	bool attacking;
-
-	int currentAttackFrame;
-	int currentAttackIndex;
-
-	int HitPoints;
-
-	bool linkAttack;
-	bool hitStun;
 };
 

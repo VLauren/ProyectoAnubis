@@ -102,15 +102,6 @@ void AProta::BeginPlay()
 	Mesh->PlayAnimation(AnimStand, true);
 }
 
-void AProta::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	DoAttack();
-
-	MeshRotation(DeltaTime);
-}
-
 void AProta::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -129,9 +120,11 @@ void AProta::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Block", IE_Released, this, &AProta::StopBlock);
 }
 
-UPawnMovementComponent * AProta::GetMovementComponent() const
+void AProta::Tick(float DeltaTime)
 {
-	return Movimiento;
+	Super::Tick(DeltaTime);
+
+	DoAttack();
 }
 
 void AProta::MoveForward(float AxisValue)
@@ -160,8 +153,6 @@ void AProta::MoveRight(float AxisValue)
 
 void AProta::Attack()
 {
-	// UE_LOG(LogTemp, Warning, TEXT("ATTACK"));
-
 	if (CheckAttackStart())
 	{
 		StartAttack(0);
@@ -240,6 +231,7 @@ void AProta::StartAttack(int index)
 
 }
 
+// Se ejecuta cada frame. Gestiona los ataques del prota.
 void AProta::DoAttack()
 {
 	if (attacking)
@@ -269,6 +261,7 @@ void AProta::DoAttack()
 			}
 		}
 
+		// compruebo si ha terminado el ataque
 		if (currentAttackFrame >= AttackData->Attacks[currentAttackIndex].lastFrame)
 		{
 			if (linkAttack)
@@ -305,13 +298,6 @@ FVector AProta::PlayerLocation()
 	return Instance->GetActorLocation();
 }
 
-void AProta::MeshRotation(float DeltaTime)
-{
-	// Mesh->SetRelativeRotation(RootComponent->GetComponentRotation());
-
-	// Mesh->AddLocalRotation(FRotator(0, DeltaTime * 90, 0));
-}
-
 void AProta::Damage(int amount)
 {
 	// UE_LOG(LogTemp, Warning, TEXT("ENEMY DAMAGE: %d"), amount)
@@ -329,6 +315,10 @@ void AProta::Damage(int amount)
 	hitStun = true;
 }
 
+UPawnMovementComponent * AProta::GetMovementComponent() const
+{
+	return Movimiento;
+}
 
 
 
