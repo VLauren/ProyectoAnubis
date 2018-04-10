@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #include "Movimiento.h"
 #include "Prota.h"
 
@@ -54,5 +53,27 @@ void UMovimiento::TickComponent(float DeltaTime, enum ELevelTick TickType, FActo
 		Mesh->PlayAnimation(prota->AnimStand, true);
 		prota->AnimState = EProtaAnimState::AS_STAND;
 	}
+
+	if (KBActive)
+	{
+		FHitResult Hit;
+		FVector KBFrameMove;
+		KBFrameMove = KBDir * DeltaTime * KBStrength;
+		SafeMoveUpdatedComponent(KBFrameMove, UpdatedComponent->GetComponentRotation(), true, Hit);
+
+		// Cuanto termine el tiempo, dejo de moverme por el knockback
+		KBElapsedTime += DeltaTime;
+		if (KBElapsedTime >= KBTime)
+			KBActive = false;
+	}
+}
+
+void UMovimiento::AddKnockback(float strength, float time, FVector direction)
+{
+	KBActive = true;
+	KBStrength = strength;
+	KBTime = time;
+	KBElapsedTime = 0;
+	KBDir = direction.GetSafeNormal();
 }
 

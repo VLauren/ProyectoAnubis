@@ -3,6 +3,7 @@
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "Runtime/Engine/Classes/Components/SkeletalMeshComponent.h"
 #include "Runtime/CoreUObject/Public/UObject/ConstructorHelpers.h"
+#include "Runtime/Engine/Public/TimerManager.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/Engine.h"
@@ -95,11 +96,14 @@ void AProta::BeginPlay()
 		hitBox->SetHiddenInGame(true);
 
 		// evento de overlap del hitbox
-		hitBox->OnComponentBeginOverlap.AddDynamic(this, &AProta::OnOverlap);
+		hitBox->OnComponentBeginOverlap.AddDynamic(this, &AProta::OnHitboxOverlap);
 	}
 
 	// Mesh->PlayAnimation()
+	AnimState = EProtaAnimState::AS_STAND;
 	Mesh->PlayAnimation(AnimStand, true);
+
+	ProtaState = EProtaState::PS_MOVING;
 }
 
 void AProta::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -125,12 +129,36 @@ void AProta::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	DoAttack();
+
+	// Log de vida restante
+	if (GEngine)
+	{
+		FString msg = FString::Printf(TEXT("Vida: %d - CanMove:%s"), HitPoints, (ProtaState == EProtaState::PS_MOVING ? TEXT("true") : TEXT("false")));
+		GEngine->AddOnScreenDebugMessage(2, 0.0f, FColor::White, msg);
+	}
+
+	if (ProtaState == EProtaState::PS_HITSTUN)
+	{
+		if (hitStuntCount >= 20)
+		{
+			AnimState = EProtaAnimState::AS_STAND;
+			Mesh->PlayAnimation(AnimStand, true);
+			ProtaState = EProtaState::PS_MOVING;
+		}
+		else if(AnimState != EProtaAnimState::AS_HIT)
+		{
+			AnimState = EProtaAnimState::AS_HIT;
+			Mesh->PlayAnimation(AnimHitstun, false);
+		}
+
+		hitStuntCount++;
+	}
 }
 
 void AProta::MoveForward(float AxisValue)
 {
 	// si estoy atacando, no me muevo
-	if (attacking)
+	if (ProtaState != EProtaState::PS_MOVING)
 		return;
 
 	// Mesh->PlayAnimation(AnimRun, true);
@@ -142,7 +170,7 @@ void AProta::MoveForward(float AxisValue)
 void AProta::MoveRight(float AxisValue)
 {
 	// si estoy atacando, no me muevo
-	if (attacking)
+	if (ProtaState != EProtaState::PS_MOVING)
 		return;
 
 	// Mesh->PlayAnimation(AnimRun, true);
@@ -157,7 +185,7 @@ void AProta::Attack()
 	{
 		StartAttack(0);
 	}
-	else if (CheckIfLinkFrame())
+	else if (ProtaState != EProtaState::PS_HITSTUN && CheckIfLinkFrame())
 	{
 		// StartAttack(currentAttackIndex + 1);
 		linkAttack = true;
@@ -168,19 +196,34 @@ void AProta::Attack()
 
 void AProta::StartBlock()
 {
-	UE_LOG(LogTemp, Warning, TEXT("START BLOCK"));
+	// Si estoy en estado neutral
+	if (ProtaState == EProtaState::PS_MOVING)
+	{
+		// Cambio a estado de defensa y cambio la animacion
+		AnimState = EProtaAnimState::AS_BLOCK;
+		Mesh->PlayAnimation(AnimBlock, false);
+		ProtaState = EProtaState::PS_BLOCK;
+	}
+
 }
 
 void AProta::StopBlock()
 {
-	UE_LOG(LogTemp, Warning, TEXT("STOP BLOCK"));
+	// Al soltar el boton de defensa, si estoy defendiendo
+	if (ProtaState == EProtaState::PS_BLOCK)
+	{
+		// Cambio a estado neutral
+		AnimState = EProtaAnimState::AS_STAND;
+		Mesh->PlayAnimation(AnimStand, false);
+		ProtaState = EProtaState::PS_MOVING;
+	}
 }
 	
 // Comprueba si el personaje está en un estado correcto para iniciar un ataque
 bool AProta::CheckAttackStart()
 {
-	// HACK por ahora puedo inicar un ataque si no estoy atacando
-	return !attacking;
+	// Solo puedo iniciar un ataque desde el estado neutral
+	return ProtaState == EProtaState::PS_MOVING;
 }
 
 // Comprueba si el personaje puede inicar un ataque desde del actual
@@ -193,7 +236,7 @@ bool AProta::CheckIfLinkFrame()
 	}
 	bool hasNextAttack = currentAttackIndex < (AttackData->Attacks.Num() - 1);
 
-	return attacking && currentAttackFrame >= AttackData->Attacks[currentAttackIndex].linkStart && hasNextAttack;
+	return ProtaState == EProtaState::PS_ATTACKING && currentAttackFrame >= AttackData->Attacks[currentAttackIndex].linkStart && hasNextAttack;
 }
 
 // Comprueba si estoy en un frame activo de daño
@@ -213,7 +256,7 @@ void AProta::StartAttack(int index)
 	}
 
 	// StartAttackAnimation(index);
-	attacking = true;
+	ProtaState = EProtaState::PS_ATTACKING;
 	currentAttackFrame = 0;
 	currentAttackIndex = index;
 
@@ -229,12 +272,23 @@ void AProta::StartAttack(int index)
 	// Mesh->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage();
 	// https://docs.unrealengine.com/en-us/Engine/Animation/AnimationComposite
 
+	// TODO avanzar con cada ataque con timer y valores hardcodeados
+	// GetWorldTimerManager().SetTimer(TimerHandle, this, lafun)
+	AttackMove(1, 0.5f);
 }
+
+void AProta::AttackMove(float amount, float time)
+{
+	// O ALGO
+
+	// Movimiento->AddKnockback(amount, time, GetControlRotation() GetForwardVector());
+}
+
 
 // Se ejecuta cada frame. Gestiona los ataques del prota.
 void AProta::DoAttack()
 {
-	if (attacking)
+	if (ProtaState == EProtaState::PS_ATTACKING)
 	{
 		// UE_LOG(LogTemp, Warning, TEXT("frame de ataque: %d - %s"), currentAttackFrame, (CheckActiveFrame() ? TEXT("true") : TEXT("false")));
 		if (GEngine)
@@ -275,13 +329,13 @@ void AProta::DoAttack()
 				AnimState = EProtaAnimState::AS_STAND;
 				Mesh->PlayAnimation(AnimStand, false);
 
-				attacking = false;
+				ProtaState = EProtaState::PS_MOVING;
 			}
 		}
 	}
 }
 
-void AProta::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult)
+void AProta::OnHitboxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Hitbox overlap! %s"), OtherComp->GetOwner()->GetClass()->IsChildOf<AEnemy>() ? TEXT("ES ENEMIGO") : TEXT("no es enemigo"));
 
@@ -289,7 +343,7 @@ void AProta::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherAc
 	{
 		// Si es enemigo, le hago daño
 		if(OtherComp->GetOwner()->GetClass()->IsChildOf<AEnemy>())
-			((AEnemy*)OtherComp->GetOwner())->Damage(10);
+			((AEnemy*)OtherComp->GetOwner())->Damage(10, GetActorLocation());
 	}
 }
 
@@ -298,21 +352,55 @@ FVector AProta::PlayerLocation()
 	return Instance->GetActorLocation();
 }
 
-void AProta::Damage(int amount)
+void AProta::Damage(int amount, FVector sourcePoint, bool unblockable)
 {
-	// UE_LOG(LogTemp, Warning, TEXT("ENEMY DAMAGE: %d"), amount)
-
-	// HACK
-	// Destroy();
-
-	HitPoints -= amount;
-	if (HitPoints <= 0)
+	// Si no estoy defendiendome
+	if (unblockable || ProtaState != EProtaState::PS_BLOCK)
 	{
-		// UGameplayStatics::OpenLevel(this, *GetWorld()->GetMapName());
-		UGameplayStatics::OpenLevel(this, TEXT("/Game/Mapas/Mapa2"));
-	}
+		HitPoints -= amount;
+		if (HitPoints <= 0)
+		{
+			// TODO hacer pantalla + que cargue la pantalla buena
 
-	hitStun = true;
+			// HACK por ahora cuando muero: recargo la pantalla
+			// UGameplayStatics::OpenLevel(this, *GetWorld()->GetMapName());
+			UGameplayStatics::OpenLevel(this, TEXT("/Game/Mapas/Mapa"));
+		}
+
+
+		// TODO esto en funcion de hitstun
+
+		// Animacion de hit stun
+		AnimState = EProtaAnimState::AS_HIT;
+		Mesh->PlayAnimation(AnimHitstun, false);
+
+		hitStuntCount = 0;
+		ProtaState = EProtaState::PS_HITSTUN;
+
+		// Knockback
+		FVector kbDirection = GetActorLocation() - sourcePoint;
+		kbDirection.Z = 0;
+		kbDirection.Normalize();
+		Movimiento->AddKnockback(1000, 0.1f, kbDirection);
+		// TODO origen del ataque para el knockback
+
+		// FTimerDelegate TimerCallback;
+		// TimerCallback.BindLambda([this]
+		// {
+			// Tras el hit stun, vuelvo a neutral
+			// TODO usar Tick en lugar de timer para esto
+
+			// ProtaState = EProtaState::PS_MOVING;
+			// if (Mesh != nullptr)
+			// {
+				// Mesh->PlayAnimation(AnimStand, true);
+			// }
+			// UE_LOG(LogTemp, Warning, TEXT("Paco"));
+		// });
+
+		// FTimerHandle Handle;
+		// GetWorldTimerManager().SetTimer(Handle, TimerCallback, 0.5f, false);
+	}
 }
 
 UPawnMovementComponent * AProta::GetMovementComponent() const

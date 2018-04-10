@@ -13,8 +13,18 @@ enum class EProtaAnimState : uint8
 	AS_STAND	UMETA(DisplayName="Stand"),
 	AS_RUN		UMETA(DisplayName="Run"),
 	AS_ATTACK	UMETA(DisplayName = "Attack"),
+	AS_BLOCK	UMETA(DisplayName = "Block"),
 	AS_DEATH	UMETA(DisplayName = "Death"),
 	AS_HIT		UMETA(DisplayName = "Hit")
+};
+
+UENUM()
+enum class EProtaState : uint8
+{
+	PS_MOVING		UMETA(DisplayName = "Moving"),
+	PS_ATTACKING	UMETA(DisplayName = "Attacking"),
+	PS_BLOCK		UMETA(DisplayName = "Block"),
+	PS_HITSTUN		UMETA(DisplayName = "Hitstun")
 };
 
 UCLASS()
@@ -66,7 +76,7 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 		UNormalAttackData* AttackData = nullptr;
 
-	void Damage(int amount);
+	void Damage(int amount, FVector sourcePoint, bool unblockable = false);
 
 	// Animaciones
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
@@ -79,39 +89,56 @@ public:
 		class UAnimationAsset* AnimAttack2;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 		class UAnimationAsset* AnimAttack3;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+		class UAnimationAsset* AnimBlock;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+		class UAnimationAsset* AnimHitstun;
 
 	UPROPERTY(EditAnywhere, Category = Animation)
 		EProtaAnimState AnimState;
 
+	UPROPERTY(EditAnywhere)
+		EProtaState ProtaState;
+
 private:
 
+	// Referencia estatica al prota
+	static AProta* Instance;
+
+	// Vida restante
 	int HitPoints;
 
-	// flags
-	bool attacking;
-	bool linkAttack;
-	bool hitStun;
 
+	// flag para indicar que se debe iniciar el siguiente ataque
+	bool linkAttack;
+
+	// Datos del ataque actual
 	int currentAttackFrame;
 	int currentAttackIndex;
 
-	static AProta* Instance;
-
+	// Metodos de input
 	void MoveForward(float AxisValue);
 	void MoveRight(float AxisValue);
 	void Attack();
 	void StartBlock();
 	void StopBlock();
 
+	// Metodos de ataques
+	void StartAttack(int index);
+	void DoAttack();
 	bool CheckAttackStart();
 	bool CheckIfLinkFrame();
 	bool CheckActiveFrame();
 
-	void StartAttack(int index);
-	void DoAttack();
-
+	// Funcion llamada cuando la hitbox detecta algo
 	UFUNCTION()
-		void OnOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+		void OnHitboxOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
+	void AttackMove(float amount, float time);
+	bool attackMove;
+	float attackMoveTime;
+	float attackMoveTimeCount;
+
+	int hitStuntCount;
 };
 
