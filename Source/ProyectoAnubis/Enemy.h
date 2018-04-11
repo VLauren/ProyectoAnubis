@@ -12,6 +12,7 @@ enum class EEnemyState : uint8
 	ES_WAIT			UMETA(DisplayName="Wait"),
 	ES_CHASING		UMETA(DisplayName="Chasing"),
 	ES_ATTACKING	UMETA(DisplayName="Attacking"),
+	ES_HITSTUN			UMETA(DisplayName="Hitstun")
 };
 
 UCLASS()
@@ -22,15 +23,11 @@ class PROYECTOANUBIS_API AEnemy : public APawn
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UCapsuleComponent* CapsuleComponent;
 
-	/** The main skeletal mesh associated with this Character (optional sub-object). */
-	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		class USkeletalMeshComponent* Mesh;
-
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UBoxComponent* HitBox = nullptr;
 
-private:
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class UEnemyMovement* Movement;
 protected:
 
 public:
@@ -44,15 +41,17 @@ public:
 
 	void Attack();
 
+	void ActivateHitbox();
 	void EndAttack();
 
-	UFUNCTION()
-		void OnOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-
-	void Damage(int amount);
+	void Damage(int amount, FVector sourcePoint);
 	
 	FRotator StartMeshRotation;
 	FRotator CurrentRotation;
+
+	/** The main skeletal mesh associated with this Character (optional sub-object). */
+	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class USkeletalMeshComponent* Mesh;
 
 	UFUNCTION()
 		void OnHitboxOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
@@ -61,4 +60,12 @@ public:
 		EEnemyState EnemyState;
 
 	FTimerHandle TimerHandle;
+
+private:
+
+	// Vida restante
+	int HitPoints;
+
+	int hitStuntCount;
+
 };

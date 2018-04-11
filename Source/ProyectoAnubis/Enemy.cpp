@@ -1,10 +1,15 @@
 #include "Enemy.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "Runtime/Engine/Classes/Components/SkeletalMeshComponent.h"
+#include "Runtime/Engine/Public/TimerManager.h"
 #include "Prota.h"
+#include "EnemyMovement.h"
 
-/* TODO
-* - AIController, como va eso
+/*
+* TODO agregar animaciones
+* TODO mover enemigo con componente de mov
+* - TODO Spawner de enemigo basico
+* - TODO AIController, como va eso
 */
 
 AEnemy::AEnemy()
@@ -25,8 +30,6 @@ AEnemy::AEnemy()
 	CapsuleComponent->SetVisibility(true);
 	CapsuleComponent->SetHiddenInGame(false);
 
-	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnOverlap);
-
 	Mesh = CreateOptionalDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	if (Mesh)
 	{
@@ -43,6 +46,12 @@ AEnemy::AEnemy()
 		Mesh->bGenerateOverlapEvents = false;
 		Mesh->SetCanEverAffectNavigation(false);
 	}
+
+	// Componente de movimiento
+	Movement = CreateDefaultSubobject<UEnemyMovement>(TEXT("Movement"));
+	Movement->UpdatedComponent = RootComponent;
+
+	HitPoints = 100;
 }
 
 // Called when the game starts or when spawned
@@ -77,23 +86,39 @@ void AEnemy::Tick(float DeltaTime)
 	if (EnemyState == EEnemyState::ES_CHASING)
 	{
 		// Movimiento
-		direccion = (AProta::PlayerLocation() - GetActorLocation()).GetSafeNormal();
-		AddActorLocalOffset(DeltaTime * direccion * 80);
+		// direccion = (AProta::PlayerLocation() - GetActorLocation()).GetSafeNormal();
+		// AddActorLocalOffset(DeltaTime * direccion * 80);
 
 		if (FVector::Dist(AProta::PlayerLocation(), GetActorLocation()) <= 150)
 			Attack();
 	}
 
 	// Siempre que no este atacando
-	if (EnemyState != EEnemyState::ES_ATTACKING)
-	{
+	// if (EnemyState != EEnemyState::ES_ATTACKING)
+	// {
 		// oriento el modelo hacia el jugador
-		FRotator TargetRotation = direccion.Rotation() + StartMeshRotation;
-		CurrentRotation = FMath::Lerp(CurrentRotation, TargetRotation, 0.1f);
-		Mesh->SetRelativeRotation(CurrentRotation);
+		// FRotator TargetRotation = direccion.Rotation() + StartMeshRotation;
+		// CurrentRotation = FMath::Lerp(CurrentRotation, TargetRotation, 0.1f);
+		// Mesh->SetRelativeRotation(CurrentRotation);
+	// }
+
+
+	if (EnemyState == EEnemyState::ES_HITSTUN)
+	{
+		if (hitStuntCount >= 20)
+		{
+			// AnimState = EProtaAnimState::AS_STAND;
+			// Mesh->PlayAnimation(AnimStand, true);
+			EnemyState = EEnemyState::ES_CHASING;
+		}
+		// else if(AnimState != EProtaAnimState::AS_HIT)
+		// {
+			// AnimState = EProtaAnimState::AS_HIT;
+			// Mesh->PlayAnimation(AnimHitstun, false);
+		// }
+
+		hitStuntCount++;
 	}
-
-
 }
 
 void AEnemy::Attack()
@@ -109,7 +134,19 @@ void AEnemy::Attack()
 		HitBox->SetHiddenInGame(false);
 	}
 
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &AEnemy::EndAttack, 0.5f, false);
+	FTimerHandle th;
+	// GetWorldTimerManager().SetTimer(TimerHandle, this, &AEnemy::ActivateHitbox, 0.75f, false);
+	GetWorldTimerManager().SetTimer(th, this, &AEnemy::EndAttack, 1.0f, false);
+}
+
+void AEnemy::ActivateHitbox()
+{
+	if (HitBox != nullptr)
+	{
+		HitBox->bGenerateOverlapEvents = true;
+		HitBox->SetVisibility(true);
+		HitBox->SetHiddenInGame(false);
+	}
 }
 
 void AEnemy::EndAttack()
@@ -125,18 +162,28 @@ void AEnemy::EndAttack()
 
 }
 
-void AEnemy::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult)
+void AEnemy::Damage(int amount, FVector sourcePoint)
 {
-	// if (OverlappedComponent != nullptr)
-		// UE_LOG(LogTemp, Warning, TEXT("ENEMY OVERLAPPP: %s"), *OtherComp->GetName())
-}
+	// UE_LOG(LogTemp, Warning, TEXT("ENEMY DAMAGE: %d"), amount)
 
-void AEnemy::Damage(int amount)
-{
-	UE_LOG(LogTemp, Warning, TEXT("ENEMY DAMAGE: %d"), amount)
+	hitStuntCount = 0;
+	EnemyState = EEnemyState::ES_HITSTUN;
 
-	// HACK
-	Destroy();
+	// TODO animacion de hit stun + timer de volver a chasing
+	// TODO origen del damage para knockback
+
+	// Knockback
+	FVector kbDirection = GetActorLocation() - sourcePoint;
+	kbDirection.Z = 0;
+	kbDirection.Normalize();
+	Movement->AddKnockback(500, 0.07f, kbDirection);
+
+	HitPoints -= amount;
+	if (HitPoints <= 0)
+	{
+		Destroy();
+		// TODO animacion de muerte + estado muriendo + cancelar colision + timer Destroy
+	}
 }
 
 void AEnemy::OnHitboxOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
@@ -147,7 +194,14 @@ void AEnemy::OnHitboxOverlap(UPrimitiveComponent * OverlappedComponent, AActor *
 		if (OtherComp->GetOwner()->GetClass()->IsChildOf<AProta>())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Enemigo Golpea"))
-			((AProta*)OtherComp->GetOwner())->Damage(10);
+			((AProta*)OtherComp->GetOwner())->Damage(10, OverlappedComponent->GetOwner()->GetActorLocation());
+
+			if (HitBox != nullptr)
+			{
+				HitBox->bGenerateOverlapEvents = false;
+				HitBox->SetVisibility(false);
+				HitBox->SetHiddenInGame(true);
+			}
 		}
 	}
 }

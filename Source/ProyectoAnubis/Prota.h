@@ -104,6 +104,7 @@ private:
 
 	// Referencia estatica al prota
 	static AProta* Instance;
+	FRotator StartMeshRotation;
 
 	// Vida restante
 	int HitPoints;

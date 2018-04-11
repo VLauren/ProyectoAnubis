@@ -104,6 +104,8 @@ void AProta::BeginPlay()
 	Mesh->PlayAnimation(AnimStand, true);
 
 	ProtaState = EProtaState::PS_MOVING;
+
+	StartMeshRotation = Mesh->RelativeRotation;
 }
 
 void AProta::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -280,8 +282,7 @@ void AProta::StartAttack(int index)
 void AProta::AttackMove(float amount, float time)
 {
 	// O ALGO
-
-	// Movimiento->AddKnockback(amount, time, GetControlRotation() GetForwardVector());
+	Movimiento->AddKnockback(500, 0.07f, (Mesh->RelativeRotation - StartMeshRotation).Vector());
 }
 
 
@@ -381,8 +382,10 @@ void AProta::Damage(int amount, FVector sourcePoint, bool unblockable)
 		FVector kbDirection = GetActorLocation() - sourcePoint;
 		kbDirection.Z = 0;
 		kbDirection.Normalize();
-		Movimiento->AddKnockback(1000, 0.1f, kbDirection);
-		// TODO origen del ataque para el knockback
+		if (currentAttackIndex != 2)
+			Movimiento->AddKnockback(700, 0.1f, kbDirection);
+		else
+			Movimiento->AddKnockback(2500, 0.3f, kbDirection);
 
 		// FTimerDelegate TimerCallback;
 		// TimerCallback.BindLambda([this]
