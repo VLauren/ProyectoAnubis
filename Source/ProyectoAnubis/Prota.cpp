@@ -26,7 +26,7 @@ AProta::AProta()
 	CapsuleComponent->bDynamicObstacle = true;
 	RootComponent = CapsuleComponent;
 
-	CapsuleComponent->SetVisibility(true);
+	// CapsuleComponent->SetVisibility(true);
 	CapsuleComponent->SetHiddenInGame(false);
 
 	// Agrero el spring arm para la camara
@@ -92,7 +92,7 @@ void AProta::BeginPlay()
 	if (hitBox != nullptr)
 	{
 		hitBox->bGenerateOverlapEvents = false;
-		hitBox->SetVisibility(false);
+		// hitBox->SetVisibility(false);
 		hitBox->SetHiddenInGame(true);
 
 		// evento de overlap del hitbox
@@ -305,13 +305,13 @@ void AProta::DoAttack()
 			if (CheckActiveFrame())
 			{
 				hitBox->bGenerateOverlapEvents = true;
-				hitBox->SetVisibility(true);
+				// hitBox->SetVisibility(true);
 				hitBox->SetHiddenInGame(false);
 			}
 			else
 			{
 				hitBox->bGenerateOverlapEvents = false;
-				hitBox->SetVisibility(false);
+				// hitBox->SetVisibility(false);
 				hitBox->SetHiddenInGame(true);
 			}
 		}
@@ -365,7 +365,7 @@ void AProta::Damage(int amount, FVector sourcePoint, bool unblockable)
 
 			// HACK por ahora cuando muero: recargo la pantalla
 			// UGameplayStatics::OpenLevel(this, *GetWorld()->GetMapName());
-			UGameplayStatics::OpenLevel(this, TEXT("/Game/Mapas/Mapa"));
+			UGameplayStatics::OpenLevel(this, TEXT("/Game/Mapas/Mapa3"));
 		}
 
 
@@ -382,10 +382,7 @@ void AProta::Damage(int amount, FVector sourcePoint, bool unblockable)
 		FVector kbDirection = GetActorLocation() - sourcePoint;
 		kbDirection.Z = 0;
 		kbDirection.Normalize();
-		if (currentAttackIndex != 2)
-			Movimiento->AddKnockback(700, 0.1f, kbDirection);
-		else
-			Movimiento->AddKnockback(2500, 0.3f, kbDirection);
+		Movimiento->AddKnockback(700, 0.1f, kbDirection);
 
 		// FTimerDelegate TimerCallback;
 		// TimerCallback.BindLambda([this]

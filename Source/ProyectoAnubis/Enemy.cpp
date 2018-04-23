@@ -176,7 +176,10 @@ void AEnemy::Damage(int amount, FVector sourcePoint)
 	FVector kbDirection = GetActorLocation() - sourcePoint;
 	kbDirection.Z = 0;
 	kbDirection.Normalize();
-	Movement->AddKnockback(500, 0.07f, kbDirection);
+
+	// Movement->AddKnockback(500, 0.07f, kbDirection);
+	// TODO fuerza del knockback segun ataque del prota
+	Movement->AddKnockback(2500, 0.15f, kbDirection);
 
 	HitPoints -= amount;
 	if (HitPoints <= 0)
