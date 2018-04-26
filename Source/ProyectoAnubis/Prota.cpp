@@ -160,7 +160,7 @@ void AProta::Tick(float DeltaTime)
 void AProta::MoveForward(float AxisValue)
 {
 	// si estoy atacando, no me muevo
-	if (ProtaState != EProtaState::PS_MOVING)
+	if (ProtaState != EProtaState::PS_MOVING && ProtaState != EProtaState::PS_ATTACKING)
 		return;
 
 	// Mesh->PlayAnimation(AnimRun, true);
@@ -172,7 +172,7 @@ void AProta::MoveForward(float AxisValue)
 void AProta::MoveRight(float AxisValue)
 {
 	// si estoy atacando, no me muevo
-	if (ProtaState != EProtaState::PS_MOVING)
+	if (ProtaState != EProtaState::PS_MOVING && ProtaState != EProtaState::PS_ATTACKING)
 		return;
 
 	// Mesh->PlayAnimation(AnimRun, true);
@@ -186,6 +186,8 @@ void AProta::Attack()
 	if (CheckAttackStart())
 	{
 		StartAttack(0);
+
+
 	}
 	else if (ProtaState != EProtaState::PS_HITSTUN && CheckIfLinkFrame())
 	{
@@ -282,7 +284,7 @@ void AProta::StartAttack(int index)
 void AProta::AttackMove(float amount, float time)
 {
 	// O ALGO
-	Movimiento->AddKnockback(500, 0.07f, (Mesh->RelativeRotation - StartMeshRotation).Vector());
+	Movimiento->AddKnockback(300, 0.25f, (Mesh->RelativeRotation - StartMeshRotation).Vector(), true);
 }
 
 
@@ -338,13 +340,13 @@ void AProta::DoAttack()
 
 void AProta::OnHitboxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Hitbox overlap! %s"), OtherComp->GetOwner()->GetClass()->IsChildOf<AEnemy>() ? TEXT("ES ENEMIGO") : TEXT("no es enemigo"));
+	// UE_LOG(LogTemp, Warning, TEXT("Hitbox overlap! %s"), OtherComp->GetOwner()->GetClass()->IsChildOf<AEnemy>() ? TEXT("ES ENEMIGO") : TEXT("no es enemigo"));
 
 	if (OtherComp != nullptr)
 	{
 		// Si es enemigo, le hago daño
 		if(OtherComp->GetOwner()->GetClass()->IsChildOf<AEnemy>())
-			((AEnemy*)OtherComp->GetOwner())->Damage(10, GetActorLocation());
+			((AEnemy*)OtherComp->GetOwner())->Damage(10, GetActorLocation(), 500);
 	}
 }
 
@@ -353,7 +355,7 @@ FVector AProta::PlayerLocation()
 	return Instance->GetActorLocation();
 }
 
-void AProta::Damage(int amount, FVector sourcePoint, bool unblockable)
+void AProta::Damage(int amount, FVector sourcePoint, bool unblockable, float knockback)
 {
 	// Si no estoy defendiendome
 	if (unblockable || ProtaState != EProtaState::PS_BLOCK)

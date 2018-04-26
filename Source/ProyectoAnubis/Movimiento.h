@@ -16,7 +16,7 @@ public:
 
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 
-	void AddKnockback(float strength, float time, FVector direction);
+	void AddKnockback(float strength, float time, FVector direction, bool forward = false);
 
 private:
 	class USkeletalMeshComponent* Mesh;
@@ -30,4 +30,5 @@ private:
 	float KBTime;
 	float KBActive;
 	float KBElapsedTime;
+	bool KBForward;
 };

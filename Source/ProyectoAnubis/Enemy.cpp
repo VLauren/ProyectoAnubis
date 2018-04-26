@@ -51,6 +51,8 @@ AEnemy::AEnemy()
 	Movement = CreateDefaultSubobject<UEnemyMovement>(TEXT("Movement"));
 	Movement->UpdatedComponent = RootComponent;
 
+	// Particulas
+	PSC = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("HitParticles"));	PSC->bSuppressSpawning;
 	HitPoints = 100;
 }
 
@@ -89,8 +91,8 @@ void AEnemy::Tick(float DeltaTime)
 		// direccion = (AProta::PlayerLocation() - GetActorLocation()).GetSafeNormal();
 		// AddActorLocalOffset(DeltaTime * direccion * 80);
 
-		if (FVector::Dist(AProta::PlayerLocation(), GetActorLocation()) <= 150)
-			Attack();
+		// if (FVector::Dist(AProta::PlayerLocation(), GetActorLocation()) <= 150)
+			// Attack();
 	}
 
 	// Siempre que no este atacando
@@ -162,7 +164,7 @@ void AEnemy::EndAttack()
 
 }
 
-void AEnemy::Damage(int amount, FVector sourcePoint)
+void AEnemy::Damage(int amount, FVector sourcePoint, float knockback)
 {
 	// UE_LOG(LogTemp, Warning, TEXT("ENEMY DAMAGE: %d"), amount)
 
@@ -179,7 +181,13 @@ void AEnemy::Damage(int amount, FVector sourcePoint)
 
 	// Movement->AddKnockback(500, 0.07f, kbDirection);
 	// TODO fuerza del knockback segun ataque del prota
-	Movement->AddKnockback(2500, 0.15f, kbDirection);
+	Movement->AddKnockback(knockback, 0.15f, kbDirection);
+
+	// particulas
+	// https://answers.unrealengine.com/questions/327192/how-do-i-reference-my-particle-system-in-code.html
+	PSC->Activate(true);
+	// PSC->SetActive(true);
+	// PSC->ResetToDefaults();
 
 	HitPoints -= amount;
 	if (HitPoints <= 0)

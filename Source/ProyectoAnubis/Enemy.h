@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Runtime/Engine/Classes/Particles/ParticleSystemComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Enemy.generated.h"
 
@@ -28,6 +29,9 @@ class PROYECTOANUBIS_API AEnemy : public APawn
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UEnemyMovement* Movement;
+
+	UPROPERTY(VisibleAnywhere)		class UParticleSystemComponent* PSC;
+
 protected:
 
 public:
@@ -44,7 +48,7 @@ public:
 	void ActivateHitbox();
 	void EndAttack();
 
-	void Damage(int amount, FVector sourcePoint);
+	void Damage(int amount, FVector sourcePoint, float knockback = 0);
 	
 	FRotator StartMeshRotation;
 	FRotator CurrentRotation;

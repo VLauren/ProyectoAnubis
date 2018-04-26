@@ -76,7 +76,7 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 		UNormalAttackData* AttackData = nullptr;
 
-	void Damage(int amount, FVector sourcePoint, bool unblockable = false);
+	void Damage(int amount, FVector sourcePoint, bool unblockable = false, float knockback = 0);
 
 	// Animaciones
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
@@ -100,6 +100,13 @@ public:
 	UPROPERTY(EditAnywhere)
 		EProtaState ProtaState;
 
+	// flag para indicar que se debe iniciar el siguiente ataque
+	bool linkAttack;
+
+	// Datos del ataque actual
+	int currentAttackIndex;
+	int currentAttackFrame;
+
 private:
 
 	// Referencia estatica al prota
@@ -108,14 +115,6 @@ private:
 
 	// Vida restante
 	int HitPoints;
-
-
-	// flag para indicar que se debe iniciar el siguiente ataque
-	bool linkAttack;
-
-	// Datos del ataque actual
-	int currentAttackFrame;
-	int currentAttackIndex;
 
 	// Metodos de input
 	void MoveForward(float AxisValue);
